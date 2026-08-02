@@ -24,6 +24,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 
 public final class GodMacePlugin extends JavaPlugin implements Listener {
@@ -36,13 +38,16 @@ public final class GodMacePlugin extends JavaPlugin implements Listener {
     private static final Component TITLE_GOD = Component.text("⚡ MASSE DES DIEUX ⚡", NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false);
     private static final Component LORE_GOD_POWER = Component.text("Pouvoir : Banni quiconque est tué !", NamedTextColor.RED, TextDecoration.ITALIC);
 
+    // Message de ban exact demandé
+    private static final String BAN_REASON = "The gods have arrived at your death.";
+
     @Override
     public void onEnable() {
         this.maceKey = new NamespacedKey(this, "is_god_mace");
         this.killsKey = new NamespacedKey(this, "mace_kills");
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("GodMacePlugin 1.1.0 prêt et optimisé !");
+        getLogger().info("GodMacePlugin prêt avec ban de 3 jours !");
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -59,7 +64,7 @@ public final class GodMacePlugin extends JavaPlugin implements Listener {
         Player victim = event.getEntity();
         Player killer = victim.getKiller();
 
-        // 1. SUPPRESSION DE LA MASSE PERDUE LORS DE LA MORT (Nettoyage des drops)
+        // 1. SUPPRESSION DE LA MASSE PERDUE LORS DE LA MORT (Détruit les drops de masse)
         event.getDrops().removeIf(this::isMaceItem);
 
         // 2. GESTION DU KILL PAR UN AUTRE JOUEUR
@@ -72,7 +77,7 @@ public final class GodMacePlugin extends JavaPlugin implements Listener {
                 int currentKills = pdc.getOrDefault(killsKey, PersistentDataType.INTEGER, 0);
 
                 if (currentKills >= 10) {
-                    // La Masse des Dieux banni la victime
+                    // La Masse des Dieux bannit la victime pour 3 jours
                     executeBan(victim, killer);
                 } else {
                     // Évolution de la masse
@@ -194,15 +199,22 @@ public final class GodMacePlugin extends JavaPlugin implements Listener {
     }
 
     private void executeBan(Player victim, Player killer) {
-        String banReason = "Tu as été pulvérisé par la Masse des Dieux de " + killer.getName() + " !";
+        // Date d'expiration = Maintenant + 3 jours
+        Date expiration = Date.from(java.time.Instant.now().plus(Duration.ofDays(3)));
+
+        // Ban temporaire de 3 jours
         Bukkit.getBanList(BanList.Type.NAME).addBan(
                 victim.getName(),
-                banReason,
-                null,
-                "Masse des Dieux"
+                BAN_REASON,
+                expiration,
+                "Masse des Dieux (" + killer.getName() + ")"
         );
-        victim.kick(Component.text(banReason, NamedTextColor.RED));
-        Bukkit.broadcast(Component.text("⚡ " + victim.getName() + " a été banni par la Masse des Dieux de " + killer.getName() + " !", NamedTextColor.DARK_RED));
+
+        // Kick avec le message exact
+        victim.kick(Component.text(BAN_REASON, NamedTextColor.RED));
+        
+        // Annonce globale
+        Bukkit.broadcast(Component.text("⚡ " + victim.getName() + " a été foudroyé par la Masse des Dieux et banni pour 3 jours !", NamedTextColor.DARK_RED));
     }
 
     private boolean isMaceItem(ItemStack item) {
