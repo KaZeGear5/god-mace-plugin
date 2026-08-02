@@ -1,0 +1,6 @@
+name: GodMacePlugin
+version: 1.1.0
+main: fr.dev.godmace.GodMacePlugin
+api-version: '1.21'
+author: Dev
+description: Plugin hautement optimisé de Masse Évolutive et Masse des Dieux avec textures.
